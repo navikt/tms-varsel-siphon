@@ -32,13 +32,13 @@ spec:
           kind: Project
         role: roles/cloudsql.client
     sqlInstances:
-      - databases:
-          - type: POSTGRES_11
-            envVarPrefix: DB
+      - name: brukernotifikasjon-cache
+        type: POSTGRES_11
+        databases:
+          - envVarPrefix: DB
             name: brukernotifikasjon-cache
             users:
               - name: varsel-siphon
-        name: brukernotifikasjon-cache
   azure:
     application:
       enabled: true

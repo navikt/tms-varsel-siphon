@@ -83,7 +83,7 @@ jobs:
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: ${{ inputs.cluster }}
-          RESOURCE: ./nais/${{ inputs.cluster }}/nais.yaml
+          RESOURCE: ./nais/${{ inputs.cluster }}/nais.yaml,./nais/${{ matrix.cluster }}/network-policy.yaml
           VAR: version=${{ needs.setup.outputs.docker_image }}
           PRINT_PAYLOAD: true
           REF: ${{ github.sha }}
