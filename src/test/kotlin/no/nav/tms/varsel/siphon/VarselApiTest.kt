@@ -1,0 +1,674 @@
+package no.nav.tms.varsel.siphon
+
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.testing.*
+import io.ktor.util.*
+import no.nav.tms.token.support.azure.validation.mock.installAzureAuthMock
+import no.nav.tms.varsel.siphon.LocalDateTimeHelper.nowAtUtc
+import no.nav.tms.varsel.siphon.VarselType.*
+import no.nav.tms.varsel.siphon.ZonedDateTimeHelper.nowAtUtcZ
+import no.nav.tms.varsel.siphon.database.*
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
+
+internal class VarselApiTest {
+
+    private val database = LocalPostgresDatabase.cleanDb()
+    private val repository = VarselRepository(database)
+
+    @AfterAll
+    fun cleanUp() {
+        LocalPostgresDatabase.deleteFromTables(database)
+    }
+
+    val beskjedOldest = dbBeskjed(forstbehandlet = nowAtUtc().minusDays(10))
+    val beskjedOld = dbBeskjed(forstbehandlet = nowAtUtc().minusDays(5))
+    val beskjedNew = dbBeskjed(forstbehandlet = nowAtUtc())
+    val eksternVarslingBeskjed = dbEksternVarslingStatus(Beskjed, beskjedNew.eventId)
+    val arkivertBeskjedOld = dbArkivVarsel(Beskjed, arkivert = nowAtUtc().minusDays(50))
+    val arkivertBeskjedOlder = dbArkivVarsel(Beskjed, arkivert = nowAtUtc().minusDays(100))
+
+    val oppgaveOldest = dbOppgave(forstbehandlet = nowAtUtc().minusDays(10))
+    val oppgaveOld = dbOppgave(forstbehandlet = nowAtUtc().minusDays(5))
+    val oppgaveNew = dbOppgave(forstbehandlet = nowAtUtc())
+    val eksternVarslingOppgave = dbEksternVarslingStatus(Oppgave, oppgaveNew.eventId)
+    val arkivertOppgaveOlder = dbArkivVarsel(Oppgave, arkivert = nowAtUtc().minusDays(100))
+    val arkivertOppgaveOld = dbArkivVarsel(Oppgave, arkivert = nowAtUtc().minusDays(50))
+
+    val innboksOldest = dbInnboks(forstbehandlet = nowAtUtc().minusDays(10))
+    val innboksOld = dbInnboks(forstbehandlet = nowAtUtc().minusDays(5))
+    val innboksNew = dbInnboks(forstbehandlet = nowAtUtc())
+    val eksternVarslingInnboks = dbEksternVarslingStatus(Innboks, innboksNew.eventId)
+    val arkivertInnboksOlder = dbArkivVarsel(Innboks, arkivert = nowAtUtc().minusDays(100))
+    val arkivertInnboksOld = dbArkivVarsel(Innboks, arkivert = nowAtUtc().minusDays(50))
+
+    @BeforeAll
+    fun setup() {
+        insertData(
+            beskjedOldest, beskjedOld, beskjedNew, eksternVarslingBeskjed, arkivertBeskjedOld, arkivertBeskjedOlder,
+            oppgaveOldest, oppgaveOld, oppgaveNew, eksternVarslingOppgave, arkivertOppgaveOld, arkivertOppgaveOlder,
+            innboksOldest, innboksOld, innboksNew, eksternVarslingInnboks, arkivertInnboksOld, arkivertInnboksOlder
+        )
+    }
+
+    @Test
+    fun `svarer med beskjeder mellom datoer`() = testVarselApi { client ->
+
+        val response = client.getVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(6),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        )
+
+        val beskjedList: List<Varsel> = response.body()
+
+        beskjedList.size shouldBe 2
+        beskjedList.map { it.eventId }.let { eventIds ->
+           eventIds shouldContain beskjedOld.eventId
+           eventIds shouldContain beskjedNew.eventId
+        }
+    }
+
+    @Test
+    fun `svarer med oppgaver mellom datoer`() = testVarselApi { client ->
+
+        val response = client.getVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(6),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        )
+
+        val oppgaveList: List<Varsel> = response.body()
+
+        oppgaveList.size shouldBe 2
+        oppgaveList.map { it.eventId }.let { eventIds ->
+           eventIds shouldContain oppgaveOld.eventId
+           eventIds shouldContain oppgaveNew.eventId
+        }
+    }
+
+    @Test
+    fun `svarer med innbokser mellom datoer`() = testVarselApi { client ->
+
+        val response = client.getVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(6),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        )
+
+        val innboksList: List<Varsel> = response.body()
+
+        innboksList.size shouldBe 2
+        innboksList.map { it.eventId }.let { eventIds ->
+           eventIds shouldContain innboksOld.eventId
+           eventIds shouldContain innboksNew.eventId
+        }
+    }
+
+    @Test
+    fun `svarer med riktig beskjed-data`() = testVarselApi { client ->
+        val beskjed = client.getVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(1),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        ).body<List<Varsel>>().first()
+
+        beskjed.type shouldBe Beskjed
+        beskjed.fodselsnummer shouldBe beskjedNew.fodselsnummer
+        beskjed.eventId shouldBe beskjedNew.eventId
+        beskjed.aktiv shouldBe beskjedNew.aktiv
+        beskjed.tekst shouldBe beskjedNew.tekst
+        beskjed.link shouldBe beskjedNew.link
+        beskjed.sikkerhetsnivaa shouldBe beskjedNew.sikkerhetsnivaa
+        beskjed.synligFremTil shouldEqual beskjedNew.synligFremTil
+        beskjed.namespace shouldBe beskjedNew.namespace
+        beskjed.appnavn shouldBe beskjedNew.appnavn
+        beskjed.forstBehandlet shouldEqual beskjedNew.forstbehandlet
+        beskjed.eksternVarsling shouldBe beskjedNew.eksternVarsling
+        beskjed.prefererteKanaler.joinToString(",") shouldBe beskjedNew.preferertekanaler
+        beskjed.sistOppdatert shouldEqual beskjedNew.sistOppdatert
+        beskjed.fristUtlopt shouldBe beskjedNew.fristUtlopt
+
+        val eksternVarslingStatus = beskjed.eksternVarslingStatus
+
+        eksternVarslingStatus.shouldNotBeNull()
+        eksternVarslingStatus.sendt shouldBe eksternVarslingBeskjed.eksternVarslingSendt
+        eksternVarslingStatus.renotifikasjonSendt shouldBe eksternVarslingBeskjed.renotifikasjonSendt
+        eksternVarslingStatus.kanaler.joinToString(",") shouldBe eksternVarslingBeskjed.kanaler
+        eksternVarslingStatus.historikk shouldBe eksternVarslingBeskjed.historikk
+        eksternVarslingStatus.sistOppdatert shouldEqual eksternVarslingBeskjed.sistOppdatert
+    }
+
+    @Test
+    fun `svarer med riktig oppgave-data`() = testVarselApi { client ->
+        val oppgave = client.getVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(1),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        ).body<List<Varsel>>().first()
+
+        oppgave.type shouldBe Oppgave
+        oppgave.fodselsnummer shouldBe oppgaveNew.fodselsnummer
+        oppgave.eventId shouldBe oppgaveNew.eventId
+        oppgave.aktiv shouldBe oppgaveNew.aktiv
+        oppgave.tekst shouldBe oppgaveNew.tekst
+        oppgave.link shouldBe oppgaveNew.link
+        oppgave.sikkerhetsnivaa shouldBe oppgaveNew.sikkerhetsnivaa
+        oppgave.synligFremTil shouldEqual oppgaveNew.synligFremTil
+        oppgave.namespace shouldBe oppgaveNew.namespace
+        oppgave.appnavn shouldBe oppgaveNew.appnavn
+        oppgave.forstBehandlet shouldEqual oppgaveNew.forstbehandlet
+        oppgave.eksternVarsling shouldBe oppgaveNew.eksternVarsling
+        oppgave.prefererteKanaler.joinToString(",") shouldBe oppgaveNew.preferertekanaler
+        oppgave.sistOppdatert shouldEqual oppgaveNew.sistOppdatert
+        oppgave.fristUtlopt shouldBe oppgaveNew.fristUtlopt
+
+        val eksternVarslingStatus = oppgave.eksternVarslingStatus
+
+        eksternVarslingStatus.shouldNotBeNull()
+        eksternVarslingStatus.sendt shouldBe eksternVarslingOppgave.eksternVarslingSendt
+        eksternVarslingStatus.renotifikasjonSendt shouldBe eksternVarslingOppgave.renotifikasjonSendt
+        eksternVarslingStatus.kanaler.joinToString(",") shouldBe eksternVarslingOppgave.kanaler
+        eksternVarslingStatus.historikk shouldBe eksternVarslingOppgave.historikk
+        eksternVarslingStatus.sistOppdatert shouldEqual eksternVarslingOppgave.sistOppdatert
+    }
+
+    @Test
+    fun `svarer med riktig innboks-data`() = testVarselApi { client ->
+        val innboks = client.getVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(1),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        ).body<List<Varsel>>().first()
+
+        innboks.type shouldBe Innboks
+        innboks.fodselsnummer shouldBe innboksNew.fodselsnummer
+        innboks.eventId shouldBe innboksNew.eventId
+        innboks.aktiv shouldBe innboksNew.aktiv
+        innboks.tekst shouldBe innboksNew.tekst
+        innboks.link shouldBe innboksNew.link
+        innboks.sikkerhetsnivaa shouldBe innboksNew.sikkerhetsnivaa
+        innboks.synligFremTil shouldEqual null
+        innboks.namespace shouldBe innboksNew.namespace
+        innboks.appnavn shouldBe innboksNew.appnavn
+        innboks.forstBehandlet shouldEqual innboksNew.forstbehandlet
+        innboks.eksternVarsling shouldBe innboksNew.eksternVarsling
+        innboks.prefererteKanaler.joinToString(",") shouldBe innboksNew.preferertekanaler
+        innboks.sistOppdatert shouldEqual innboksNew.sistOppdatert
+        innboks.fristUtlopt shouldBe innboksNew.fristUtlopt
+
+        val eksternVarslingStatus = innboks.eksternVarslingStatus
+
+        eksternVarslingStatus.shouldNotBeNull()
+        eksternVarslingStatus.sendt shouldBe eksternVarslingInnboks.eksternVarslingSendt
+        eksternVarslingStatus.renotifikasjonSendt shouldBe eksternVarslingInnboks.renotifikasjonSendt
+        eksternVarslingStatus.kanaler.joinToString(",") shouldBe eksternVarslingInnboks.kanaler
+        eksternVarslingStatus.historikk shouldBe eksternVarslingInnboks.historikk
+        eksternVarslingStatus.sistOppdatert shouldEqual eksternVarslingInnboks.sistOppdatert
+    }
+
+    @Test
+    fun `svarer med arkiverte beskjeder`() = testVarselApi { client ->
+        val arkiverteBeskjeder = client.getArkiverteVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(365),
+            toDate = nowAtUtcZ().minusDays(40),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        arkiverteBeskjeder.size shouldBe 2
+    }
+
+    @Test
+    fun `svarer med arkiverte oppgaver`() = testVarselApi { client ->
+        val arkiverteOppgaver = client.getArkiverteVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(365),
+            toDate = nowAtUtcZ().minusDays(40),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        arkiverteOppgaver.size shouldBe 2
+    }
+
+    @Test
+    fun `svarer med arkiverte innbokser`() = testVarselApi { client ->
+        val arkiverteInnbokser = client.getArkiverteVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(365),
+            toDate = nowAtUtcZ().minusDays(40),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        arkiverteInnbokser.size shouldBe 2
+    }
+
+    @Test
+    fun `svarer med riktig arkivert beskjed-data`() = testVarselApi { client ->
+        val arkivertBeskjed = client.getArkiverteVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(365),
+            toDate = nowAtUtcZ().minusDays(60),
+            max = 5
+        ).body<List<ArkivertVarsel>>().first()
+
+        arkivertBeskjed.eventId shouldBe arkivertBeskjedOlder.eventId
+        arkivertBeskjed.fodselsnummer shouldBe arkivertBeskjedOlder.fodselsnummer
+        arkivertBeskjed.tekst shouldBe arkivertBeskjedOlder.tekst
+        arkivertBeskjed.link shouldBe arkivertBeskjedOlder.link
+        arkivertBeskjed.sikkerhetsnivaa shouldBe arkivertBeskjedOlder.sikkerhetsnivaa
+        arkivertBeskjed.aktiv shouldBe arkivertBeskjedOlder.aktiv
+        arkivertBeskjed.produsentApp shouldBe arkivertBeskjedOlder.produsentapp
+        arkivertBeskjed.eksternVarslingSendt shouldBe arkivertBeskjedOlder.eksternvarslingsendt
+        arkivertBeskjed.eksternVarslingKanaler.joinToString(",") shouldBe arkivertBeskjedOlder.eksternvarslingkanaler
+        arkivertBeskjed.forstBehandlet shouldEqual arkivertBeskjedOlder.forstbehandlet
+        arkivertBeskjed.arkivert shouldEqual arkivertBeskjedOlder.arkivert
+        arkivertBeskjed.fristUtlopt shouldBe (arkivertBeskjedOlder.fristUtlopt ?: false)
+    }
+
+    @Test
+    fun `svarer med riktig arkivert oppgave-data`() = testVarselApi { client ->
+        val arkivertOppgave = client.getArkiverteVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(365),
+            toDate = nowAtUtcZ().minusDays(60),
+            max = 5
+        ).body<List<ArkivertVarsel>>().first()
+
+        arkivertOppgave.eventId shouldBe arkivertOppgaveOlder.eventId
+        arkivertOppgave.fodselsnummer shouldBe arkivertOppgaveOlder.fodselsnummer
+        arkivertOppgave.tekst shouldBe arkivertOppgaveOlder.tekst
+        arkivertOppgave.link shouldBe arkivertOppgaveOlder.link
+        arkivertOppgave.sikkerhetsnivaa shouldBe arkivertOppgaveOlder.sikkerhetsnivaa
+        arkivertOppgave.aktiv shouldBe arkivertOppgaveOlder.aktiv
+        arkivertOppgave.produsentApp shouldBe arkivertOppgaveOlder.produsentapp
+        arkivertOppgave.eksternVarslingSendt shouldBe arkivertOppgaveOlder.eksternvarslingsendt
+        arkivertOppgave.eksternVarslingKanaler.joinToString(",") shouldBe arkivertOppgaveOlder.eksternvarslingkanaler
+        arkivertOppgave.forstBehandlet shouldEqual arkivertOppgaveOlder.forstbehandlet
+        arkivertOppgave.arkivert shouldEqual arkivertOppgaveOlder.arkivert
+        arkivertOppgave.fristUtlopt shouldBe (arkivertOppgaveOlder.fristUtlopt ?: false)
+    }
+
+    @Test
+    fun `svarer med riktig arkivert innboks-data`() = testVarselApi { client ->
+        val arkivertInnboks = client.getArkiverteVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(365),
+            toDate = nowAtUtcZ().minusDays(60),
+            max = 5
+        ).body<List<ArkivertVarsel>>().first()
+
+        arkivertInnboks.eventId shouldBe arkivertInnboksOlder.eventId
+        arkivertInnboks.fodselsnummer shouldBe arkivertInnboksOlder.fodselsnummer
+        arkivertInnboks.tekst shouldBe arkivertInnboksOlder.tekst
+        arkivertInnboks.link shouldBe arkivertInnboksOlder.link
+        arkivertInnboks.sikkerhetsnivaa shouldBe arkivertInnboksOlder.sikkerhetsnivaa
+        arkivertInnboks.aktiv shouldBe arkivertInnboksOlder.aktiv
+        arkivertInnboks.produsentApp shouldBe arkivertInnboksOlder.produsentapp
+        arkivertInnboks.eksternVarslingSendt shouldBe arkivertInnboksOlder.eksternvarslingsendt
+        arkivertInnboks.eksternVarslingKanaler.joinToString(",") shouldBe arkivertInnboksOlder.eksternvarslingkanaler
+        arkivertInnboks.forstBehandlet shouldEqual arkivertInnboksOlder.forstbehandlet
+        arkivertInnboks.arkivert shouldEqual arkivertInnboksOlder.arkivert
+        arkivertInnboks.fristUtlopt shouldBe (arkivertInnboksOlder.fristUtlopt ?: false)
+    }
+
+    @Test
+    fun `filtrerer beskjeder etter paramatere`() = testVarselApi { client ->
+        val alleBeskjeder = client.getVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val gamleBeskjeder = client.getVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().minusDays(1),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val fremtidigeBeskjeder = client.getVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().plusDays(1),
+            toDate = nowAtUtcZ().plusDays(10),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val maxEnBeskjed = client.getVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 1
+        ).body<List<Varsel>>()
+
+        alleBeskjeder.size shouldBe 3
+
+        gamleBeskjeder.size shouldBe 2
+        gamleBeskjeder.map { it.eventId }.let {
+            it shouldContain beskjedOld.eventId
+            it shouldContain beskjedOldest.eventId
+        }
+
+        fremtidigeBeskjeder.size shouldBe 0
+
+        maxEnBeskjed.size shouldBe 1
+        maxEnBeskjed.map { it.eventId }.let {
+            it shouldContain beskjedOldest.eventId
+        }
+    }
+
+    @Test
+    fun `filtrerer oppgaver etter paramatere`() = testVarselApi { client ->
+        val alleOppgaver = client.getVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val gamleOppgaver = client.getVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().minusDays(1),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val fremtidigeOppgaver = client.getVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().plusDays(1),
+            toDate = nowAtUtcZ().plusDays(10),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val maxEnOppgave = client.getVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 1
+        ).body<List<Varsel>>()
+
+        alleOppgaver.size shouldBe 3
+
+        gamleOppgaver.size shouldBe 2
+        gamleOppgaver.map { it.eventId }.let {
+            it shouldContain oppgaveOld.eventId
+            it shouldContain oppgaveOldest.eventId
+        }
+
+        fremtidigeOppgaver.size shouldBe 0
+
+        maxEnOppgave.size shouldBe 1
+        maxEnOppgave.map { it.eventId }.let {
+            it shouldContain oppgaveOldest.eventId
+        }
+    }
+
+    @Test
+    fun `filtrerer innbokser etter paramatere`() = testVarselApi { client ->
+        val alleInnbokser = client.getVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val gamleInnbokser = client.getVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().minusDays(1),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val fremtidigeInnbokser = client.getVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().plusDays(1),
+            toDate = nowAtUtcZ().plusDays(10),
+            max = 5
+        ).body<List<Varsel>>()
+
+        val maxEnInnboks = client.getVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(20),
+            toDate = nowAtUtcZ().plusDays(1),
+            max = 1
+        ).body<List<Varsel>>()
+
+        alleInnbokser.size shouldBe 3
+
+        gamleInnbokser.size shouldBe 2
+        gamleInnbokser.map { it.eventId }.let {
+            it shouldContain innboksOld.eventId
+            it shouldContain innboksOldest.eventId
+        }
+
+        fremtidigeInnbokser.size shouldBe 0
+
+        maxEnInnboks.size shouldBe 1
+        maxEnInnboks.map { it.eventId }.let {
+            it shouldContain innboksOldest.eventId
+        }
+    }
+
+    @Test
+    fun `filtrerer arkiverte beskjeder etter paramatere`() = testVarselApi { client ->
+        val alleArkiverteBeskjeder = client.getArkiverteVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ(),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val gamleArkiverteBeskjeder = client.getArkiverteVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ().minusDays(100),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val nyeArkiverteBeskjeder = client.getArkiverteVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(10),
+            toDate = nowAtUtcZ(),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val maxEnArkivertBeskjed = client.getArkiverteVarsler(
+            type = Beskjed,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ(),
+            max = 1
+        ).body<List<ArkivertVarsel>>()
+
+        alleArkiverteBeskjeder.size shouldBe 2
+
+        gamleArkiverteBeskjeder.size shouldBe 1
+        gamleArkiverteBeskjeder.map { it.eventId }.let {
+            it shouldContain arkivertBeskjedOlder.eventId
+        }
+
+        nyeArkiverteBeskjeder.size shouldBe 0
+
+        maxEnArkivertBeskjed.size shouldBe 1
+        maxEnArkivertBeskjed.map { it.eventId }.let {
+            it shouldContain arkivertBeskjedOlder.eventId
+        }
+    }
+
+    @Test
+    fun `filtrerer arkiverte oppgaver etter paramatere`() = testVarselApi { client ->
+        val alleArkiverteOppgaver = client.getArkiverteVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ(),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val gamleArkiverteOppgaver = client.getArkiverteVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ().minusDays(100),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val nyeArkiverteOppgaver = client.getArkiverteVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(10),
+            toDate = nowAtUtcZ(),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val maxEnArkivertOppgave = client.getArkiverteVarsler(
+            type = Oppgave,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ(),
+            max = 1
+        ).body<List<ArkivertVarsel>>()
+
+        alleArkiverteOppgaver.size shouldBe 2
+
+        gamleArkiverteOppgaver.size shouldBe 1
+        gamleArkiverteOppgaver.map { it.eventId }.let {
+            it shouldContain arkivertOppgaveOlder.eventId
+        }
+
+        nyeArkiverteOppgaver.size shouldBe 0
+
+        maxEnArkivertOppgave.size shouldBe 1
+        maxEnArkivertOppgave.map { it.eventId }.let {
+            it shouldContain arkivertOppgaveOlder.eventId
+        }
+    }
+
+    @Test
+    fun `filtrerer arkiverte innbokser etter paramatere`() = testVarselApi { client ->
+        val alleArkiverteInnbokser = client.getArkiverteVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ(),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val gamleArkiverteInnbokser = client.getArkiverteVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ().minusDays(100),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val nyeArkiverteInnbokser = client.getArkiverteVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(10),
+            toDate = nowAtUtcZ(),
+            max = 5
+        ).body<List<ArkivertVarsel>>()
+
+        val maxEnArkivertInnboks = client.getArkiverteVarsler(
+            type = Innboks,
+            fromDate = nowAtUtcZ().minusDays(500),
+            toDate = nowAtUtcZ(),
+            max = 1
+        ).body<List<ArkivertVarsel>>()
+
+        alleArkiverteInnbokser.size shouldBe 2
+
+        gamleArkiverteInnbokser.size shouldBe 1
+        gamleArkiverteInnbokser.map { it.eventId }.let {
+            it shouldContain arkivertInnboksOlder.eventId
+        }
+
+        nyeArkiverteInnbokser.size shouldBe 0
+
+        maxEnArkivertInnboks.size shouldBe 1
+        maxEnArkivertInnboks.map { it.eventId }.let {
+            it shouldContain arkivertInnboksOlder.eventId
+        }
+    }
+
+    @KtorDsl
+    private fun testVarselApi(block: suspend ApplicationTestBuilder.(HttpClient) -> Unit) = testApplication {
+
+        application {
+            configureApi(
+                repository,
+                installAuthenticatorsFunction = {
+                    installAzureAuthMock { setAsDefault = true }
+                }
+            )
+        }
+
+        this.block(
+            client.config {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+        )
+    }
+
+    private fun insertData(vararg dataList: Any) {
+        dataList.forEach { data ->
+            when(data) {
+                is DatabaseBeskjed -> database.insertBeskjed(data)
+                is DatabaseOppgave -> database.insertOppgave(data)
+                is DatabaseInnboks -> database.insertInnboks(data)
+                is DatabaseEksternVarslingStatus -> database.insertEksternVarslingStatus(data)
+                is DatabaseArkivVarsel -> database.insertArkivVarsel(data)
+                else -> throw RuntimeException("Invalid type ${data::class.simpleName}")
+            }
+        }
+    }
+
+    private suspend fun HttpClient.getVarsler(
+        type: VarselType? = null,
+        fromDate: ZonedDateTime? = null,
+        toDate: ZonedDateTime? = null,
+        max: Int? = null
+    ): HttpResponse {
+        return get("/varsler") {
+            url {
+                if (type != null) parameters.append("type", type.name)
+                if (fromDate != null) parameters.append("fraDato", fromDate.toString())
+                if (toDate != null) parameters.append("tilDato", toDate.toString())
+                if (max != null) parameters.append("max", max.toString())
+            }
+        }
+    }
+
+    private suspend fun HttpClient.getArkiverteVarsler(
+        type: VarselType? = null,
+        fromDate: ZonedDateTime? = null,
+        toDate: ZonedDateTime? = null,
+        max: Int? = null
+    ): HttpResponse {
+        return get("/arkiv/varsler") {
+            url {
+                if (type != null) parameters.append("type", type.name)
+                if (fromDate != null) parameters.append("fraDato", fromDate.toString())
+                if (toDate != null) parameters.append("tilDato", toDate.toString())
+                if (max != null) parameters.append("max", max.toString())
+            }
+        }
+    }
+
+    private infix fun ZonedDateTime?.shouldEqual(other: LocalDateTime?) {
+        this?.toLocalDateTime() shouldBe other
+    }
+}
