@@ -33,7 +33,8 @@ spec:
         role: roles/cloudsql.client
     sqlInstances:
       - databases:
-          - envVarPrefix: DB
+          - type: POSTGRES_11
+            envVarPrefix: DB
             name: brukernotifikasjon-cache
             users:
               - name: varsel-siphon
