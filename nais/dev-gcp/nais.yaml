@@ -33,5 +33,3 @@ spec:
     inbound:
       rules:
         - application: tms-varsel-authority
-  env:
-    - name:

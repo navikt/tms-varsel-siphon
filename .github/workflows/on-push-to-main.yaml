@@ -72,6 +72,6 @@ jobs:
           REF: ${{ github.sha }}
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: ${{ matrix.cluster }}
-          RESOURCE: ./nais/${{ matrix.cluster }}/nais.yaml,./nais/${{ matrix.cluster }}/network-policy.yaml
+          RESOURCE: ./nais/${{ matrix.cluster }}/nais.yaml,./nais/${{ matrix.cluster }}/network-policy.yaml,./nais/${{ matrix.cluster }}/cloudsql-proxy.yaml
           VAR: version=${{ needs.build.outputs.image }}
           PRINT_PAYLOAD: true
