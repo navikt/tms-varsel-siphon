@@ -59,12 +59,12 @@ fun Application.configureApi(
                         text = cause.message ?: "Feil i parametre"
                     )
 
-                    log.warn(cause.message, cause.stackTrace)
+                    log.warn("Feil i parametere.", cause)
                 }
 
                 else -> {
                     call.respond(HttpStatusCode.InternalServerError)
-                    log.warn(cause.message, cause.stackTrace)
+                    log.warn("Feil ved behandling av forespørsel.", cause)
                 }
             }
 
