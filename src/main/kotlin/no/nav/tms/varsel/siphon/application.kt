@@ -28,6 +28,7 @@ fun main() {
             module {
 //                configureApi(varselRepository)
                 routing {
+                    metaRoutes()
                     get("/hello") {
                         call.respond("Hi")
                     }
