@@ -73,6 +73,7 @@ fun Application.configureApi(
 
     routing {
         varselApi(varselRepository)
+        metaRoutes()
         authenticate {
         }
     }

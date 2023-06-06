@@ -11,10 +11,10 @@ spec:
   image: {{version}}
   port: 8080
   liveness:
-    path: /isalive
+    path: /internal/isAlive
     initialDelay: 30
   readiness:
-    path: /isready
+    path: /internal/isReady
     initialDelay: 30
   replicas:
     min: 2
