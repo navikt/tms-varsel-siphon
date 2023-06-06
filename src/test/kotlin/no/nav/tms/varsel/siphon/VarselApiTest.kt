@@ -609,7 +609,10 @@ internal class VarselApiTest {
             configureApi(
                 repository,
                 installAuthenticatorsFunction = {
-                    installAzureAuthMock { setAsDefault = true }
+                    installAzureAuthMock {
+                        setAsDefault = true
+                        alwaysAuthenticated = true
+                    }
                 }
             )
         }
