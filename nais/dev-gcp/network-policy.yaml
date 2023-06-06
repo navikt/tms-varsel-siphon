@@ -10,6 +10,6 @@ spec:
             cidr: 35.228.205.73/32
   podSelector:
     matchLabels:
-      app: tms-varsel-siphon
+      app: tms-varsel-siphon-sql-proxy
   policyTypes:
     - Egress
