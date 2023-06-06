@@ -6,6 +6,8 @@ metadata:
   labels:
     team: min-side
 spec:
+  envFrom:
+    - secret: tms-varsel-siphon-secrets
   image: {{version}}
   port: 8080
   liveness:
@@ -25,20 +27,6 @@ spec:
     requests:
       cpu: "50m"
       memory: 128Mi
-  gcp:
-    permissions:
-      - resource:
-          apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
-          kind: Project
-        role: roles/cloudsql.client
-    sqlInstances:
-      - name: brukernotifikasjon-cache
-        type: POSTGRES_11
-        databases:
-          - envVarPrefix: DB
-            name: brukernotifikasjon-cache
-            users:
-              - name: varsel-siphon
   azure:
     application:
       enabled: true
