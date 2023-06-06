@@ -18,21 +18,15 @@ import no.nav.tms.varsel.siphon.database.PostgresDatabase
 
 fun main() {
     val environment = Environment()
-//    val database = PostgresDatabase(environment)
+    val database = PostgresDatabase(environment)
 
-//    val varselRepository = VarselRepository(database)
+    val varselRepository = VarselRepository(database)
 
     embeddedServer(
         factory = Netty,
         environment = applicationEngineEnvironment {
             module {
-//                configureApi(varselRepository)
-                routing {
-                    metaRoutes()
-                    get("/hello") {
-                        call.respond("Hi")
-                    }
-                }
+                configureApi(varselRepository)
             }
             connector {
                 port = 8080
