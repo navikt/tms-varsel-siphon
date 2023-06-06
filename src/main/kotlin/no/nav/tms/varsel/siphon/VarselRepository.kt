@@ -6,6 +6,7 @@ import no.nav.tms.varsel.siphon.database.Database
 import no.nav.tms.varsel.siphon.database.defaultObjectMapper
 import no.nav.tms.varsel.siphon.database.json
 import java.time.ZonedDateTime
+import javax.swing.text.html.ListView
 
 class VarselRepository(private val database: Database) {
 
