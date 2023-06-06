@@ -30,6 +30,7 @@ spec:
   azure:
     application:
       enabled: true
+  accessPolicy:
     inbound:
       rules:
         - application: tms-varsel-authority
