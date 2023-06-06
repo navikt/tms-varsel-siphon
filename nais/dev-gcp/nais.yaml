@@ -33,3 +33,6 @@ spec:
     inbound:
       rules:
         - application: tms-varsel-authority
+    outbound:
+      rules:
+        - application: tms-varsel-siphon-sql-proxy
