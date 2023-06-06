@@ -31,3 +31,7 @@ interface Database {
 inline fun <reified T> Row.json(label: String, objectMapper: ObjectMapper = defaultObjectMapper()): T {
     return objectMapper.readValue(string(label))
 }
+
+inline fun <reified T> Row.jsonOrNull(label: String, objectMapper: ObjectMapper = defaultObjectMapper()): T? {
+    return stringOrNull(label)?.let { objectMapper.readValue(it) }
+}

@@ -5,6 +5,7 @@ import kotliquery.queryOf
 import no.nav.tms.varsel.siphon.database.Database
 import no.nav.tms.varsel.siphon.database.defaultObjectMapper
 import no.nav.tms.varsel.siphon.database.json
+import no.nav.tms.varsel.siphon.database.jsonOrNull
 import java.time.ZonedDateTime
 import javax.swing.text.html.ListView
 
@@ -71,7 +72,7 @@ class VarselRepository(private val database: Database) {
                 sendt = boolean("ev_eksternvarslingsendt"),
                 renotifikasjonSendt = boolean("ev_renotifikasjonSendt"),
                 kanaler = list("ev_kanaler"),
-                historikk = json("ev_historikk", objectMapper),
+                historikk = jsonOrNull("ev_historikk", objectMapper) ?: emptyList(),
                 sistOppdatert = zonedDateTime("ev_sistOppdatert")
             )
         }
