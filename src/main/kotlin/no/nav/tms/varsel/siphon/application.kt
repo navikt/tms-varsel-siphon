@@ -72,7 +72,6 @@ fun Application.configureApi(
     }
 
     routing {
-        debugApi(varselRepository)
         metaRoutes()
         authenticate {
             varselApi(varselRepository)
