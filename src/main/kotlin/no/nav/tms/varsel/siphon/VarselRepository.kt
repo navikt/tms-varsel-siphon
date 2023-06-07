@@ -28,7 +28,7 @@ class VarselRepository(private val database: Database) {
         }
     }
 
-    fun fetchArchivedVarelList(type: VarselType, fromDate: ZonedDateTime, toDate: ZonedDateTime, max: Int): List<ArkivertVarsel> {
+    fun fetchArvivertVarselList(type: VarselType, fromDate: ZonedDateTime, toDate: ZonedDateTime, max: Int): List<ArkivertVarsel> {
         return database.list {
             queryOf(
                 fetchArchivedVarselQuery(type),
