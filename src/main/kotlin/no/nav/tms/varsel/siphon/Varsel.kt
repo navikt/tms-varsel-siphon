@@ -75,6 +75,7 @@ enum class EksternStatus {
 
 @Serializable
 data class ArkivertVarsel(
+    val type: VarselType,
     val eventId: String,
     val fodselsnummer: String,
     val tekst: String,

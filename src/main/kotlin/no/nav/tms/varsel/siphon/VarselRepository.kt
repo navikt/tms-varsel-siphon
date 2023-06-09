@@ -38,7 +38,7 @@ class VarselRepository(private val database: Database) {
                     "max" to max
                 )
             )
-                .map(toArchivedVarsel())
+                .map(toArchivedVarsel(type))
                 .asList
         }
     }
@@ -78,8 +78,9 @@ class VarselRepository(private val database: Database) {
         }
     }
 
-    private fun toArchivedVarsel(): (Row) -> ArkivertVarsel = {
+    private fun toArchivedVarsel(type: VarselType): (Row) -> ArkivertVarsel = {
         ArkivertVarsel(
+            type = type,
             eventId = it.string("eventId"),
             fodselsnummer = it.string("fodselsnummer"),
             tekst = it.string("tekst"),
