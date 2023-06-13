@@ -35,23 +35,23 @@ internal class VarselApiTest {
     val beskjedOldest = dbBeskjed(forstbehandlet = nowAtUtc().minusDays(10))
     val beskjedOld = dbBeskjed(forstbehandlet = nowAtUtc().minusDays(5))
     val beskjedNew = dbBeskjed(forstbehandlet = nowAtUtc())
-    val eksternVarslingBeskjed = dbEksternVarslingStatus(Beskjed, beskjedNew.eventId)
-    val arkivertBeskjedOld = dbArkivVarsel(Beskjed, arkivert = nowAtUtc().minusDays(50))
-    val arkivertBeskjedOlder = dbArkivVarsel(Beskjed, arkivert = nowAtUtc().minusDays(100))
+    val eksternVarslingBeskjed = dbEksternVarslingStatus(beskjed, beskjedNew.eventId)
+    val arkivertBeskjedOld = dbArkivVarsel(beskjed, arkivert = nowAtUtc().minusDays(50))
+    val arkivertBeskjedOlder = dbArkivVarsel(beskjed, arkivert = nowAtUtc().minusDays(100))
 
     val oppgaveOldest = dbOppgave(forstbehandlet = nowAtUtc().minusDays(10))
     val oppgaveOld = dbOppgave(forstbehandlet = nowAtUtc().minusDays(5))
     val oppgaveNew = dbOppgave(forstbehandlet = nowAtUtc())
-    val eksternVarslingOppgave = dbEksternVarslingStatus(Oppgave, oppgaveNew.eventId)
-    val arkivertOppgaveOlder = dbArkivVarsel(Oppgave, arkivert = nowAtUtc().minusDays(100))
-    val arkivertOppgaveOld = dbArkivVarsel(Oppgave, arkivert = nowAtUtc().minusDays(50))
+    val eksternVarslingOppgave = dbEksternVarslingStatus(oppgave, oppgaveNew.eventId)
+    val arkivertOppgaveOlder = dbArkivVarsel(oppgave, arkivert = nowAtUtc().minusDays(100))
+    val arkivertOppgaveOld = dbArkivVarsel(oppgave, arkivert = nowAtUtc().minusDays(50))
 
     val innboksOldest = dbInnboks(forstbehandlet = nowAtUtc().minusDays(10))
     val innboksOld = dbInnboks(forstbehandlet = nowAtUtc().minusDays(5))
     val innboksNew = dbInnboks(forstbehandlet = nowAtUtc())
-    val eksternVarslingInnboks = dbEksternVarslingStatus(Innboks, innboksNew.eventId)
-    val arkivertInnboksOlder = dbArkivVarsel(Innboks, arkivert = nowAtUtc().minusDays(100))
-    val arkivertInnboksOld = dbArkivVarsel(Innboks, arkivert = nowAtUtc().minusDays(50))
+    val eksternVarslingInnboks = dbEksternVarslingStatus(innboks, innboksNew.eventId)
+    val arkivertInnboksOlder = dbArkivVarsel(innboks, arkivert = nowAtUtc().minusDays(100))
+    val arkivertInnboksOld = dbArkivVarsel(innboks, arkivert = nowAtUtc().minusDays(50))
 
     @BeforeAll
     fun setup() {
@@ -66,7 +66,7 @@ internal class VarselApiTest {
     fun `svarer med beskjeder mellom datoer`() = testVarselApi { client ->
 
         val response = client.getVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(6),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
@@ -85,7 +85,7 @@ internal class VarselApiTest {
     fun `svarer med oppgaver mellom datoer`() = testVarselApi { client ->
 
         val response = client.getVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(6),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
@@ -104,7 +104,7 @@ internal class VarselApiTest {
     fun `svarer med innbokser mellom datoer`() = testVarselApi { client ->
 
         val response = client.getVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(6),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
@@ -121,30 +121,30 @@ internal class VarselApiTest {
 
     @Test
     fun `svarer med riktig beskjed-data`() = testVarselApi { client ->
-        val beskjed = client.getVarsler(
-            type = Beskjed,
+        val responseBeskjed = client.getVarsler(
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(1),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
         ).body<List<Varsel>>().first()
 
-        beskjed.type shouldBe Beskjed
-        beskjed.fodselsnummer shouldBe beskjedNew.fodselsnummer
-        beskjed.eventId shouldBe beskjedNew.eventId
-        beskjed.aktiv shouldBe beskjedNew.aktiv
-        beskjed.tekst shouldBe beskjedNew.tekst
-        beskjed.link shouldBe beskjedNew.link
-        beskjed.sikkerhetsnivaa shouldBe beskjedNew.sikkerhetsnivaa
-        beskjed.synligFremTil shouldEqual beskjedNew.synligFremTil
-        beskjed.namespace shouldBe beskjedNew.namespace
-        beskjed.appnavn shouldBe beskjedNew.appnavn
-        beskjed.forstBehandlet shouldEqual beskjedNew.forstbehandlet
-        beskjed.eksternVarsling shouldBe beskjedNew.eksternVarsling
-        beskjed.prefererteKanaler.joinToString(",") shouldBe beskjedNew.preferertekanaler
-        beskjed.sistOppdatert shouldEqual beskjedNew.sistOppdatert
-        beskjed.fristUtlopt shouldBe beskjedNew.fristUtlopt
+        responseBeskjed.type shouldBe beskjed
+        responseBeskjed.fodselsnummer shouldBe beskjedNew.fodselsnummer
+        responseBeskjed.eventId shouldBe beskjedNew.eventId
+        responseBeskjed.aktiv shouldBe beskjedNew.aktiv
+        responseBeskjed.tekst shouldBe beskjedNew.tekst
+        responseBeskjed.link shouldBe beskjedNew.link
+        responseBeskjed.sikkerhetsnivaa shouldBe beskjedNew.sikkerhetsnivaa
+        responseBeskjed.synligFremTil shouldEqual beskjedNew.synligFremTil
+        responseBeskjed.namespace shouldBe beskjedNew.namespace
+        responseBeskjed.appnavn shouldBe beskjedNew.appnavn
+        responseBeskjed.forstBehandlet shouldEqual beskjedNew.forstbehandlet
+        responseBeskjed.eksternVarsling shouldBe beskjedNew.eksternVarsling
+        responseBeskjed.prefererteKanaler.joinToString(",") shouldBe beskjedNew.preferertekanaler
+        responseBeskjed.sistOppdatert shouldEqual beskjedNew.sistOppdatert
+        responseBeskjed.fristUtlopt shouldBe beskjedNew.fristUtlopt
 
-        val eksternVarslingStatus = beskjed.eksternVarslingStatus
+        val eksternVarslingStatus = responseBeskjed.eksternVarslingStatus
 
         eksternVarslingStatus.shouldNotBeNull()
         eksternVarslingStatus.sendt shouldBe eksternVarslingBeskjed.eksternVarslingSendt
@@ -156,30 +156,30 @@ internal class VarselApiTest {
 
     @Test
     fun `svarer med riktig oppgave-data`() = testVarselApi { client ->
-        val oppgave = client.getVarsler(
-            type = Oppgave,
+        val responseOppgave = client.getVarsler(
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(1),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
         ).body<List<Varsel>>().first()
 
-        oppgave.type shouldBe Oppgave
-        oppgave.fodselsnummer shouldBe oppgaveNew.fodselsnummer
-        oppgave.eventId shouldBe oppgaveNew.eventId
-        oppgave.aktiv shouldBe oppgaveNew.aktiv
-        oppgave.tekst shouldBe oppgaveNew.tekst
-        oppgave.link shouldBe oppgaveNew.link
-        oppgave.sikkerhetsnivaa shouldBe oppgaveNew.sikkerhetsnivaa
-        oppgave.synligFremTil shouldEqual oppgaveNew.synligFremTil
-        oppgave.namespace shouldBe oppgaveNew.namespace
-        oppgave.appnavn shouldBe oppgaveNew.appnavn
-        oppgave.forstBehandlet shouldEqual oppgaveNew.forstbehandlet
-        oppgave.eksternVarsling shouldBe oppgaveNew.eksternVarsling
-        oppgave.prefererteKanaler.joinToString(",") shouldBe oppgaveNew.preferertekanaler
-        oppgave.sistOppdatert shouldEqual oppgaveNew.sistOppdatert
-        oppgave.fristUtlopt shouldBe oppgaveNew.fristUtlopt
+        responseOppgave.type shouldBe oppgave
+        responseOppgave.fodselsnummer shouldBe oppgaveNew.fodselsnummer
+        responseOppgave.eventId shouldBe oppgaveNew.eventId
+        responseOppgave.aktiv shouldBe oppgaveNew.aktiv
+        responseOppgave.tekst shouldBe oppgaveNew.tekst
+        responseOppgave.link shouldBe oppgaveNew.link
+        responseOppgave.sikkerhetsnivaa shouldBe oppgaveNew.sikkerhetsnivaa
+        responseOppgave.synligFremTil shouldEqual oppgaveNew.synligFremTil
+        responseOppgave.namespace shouldBe oppgaveNew.namespace
+        responseOppgave.appnavn shouldBe oppgaveNew.appnavn
+        responseOppgave.forstBehandlet shouldEqual oppgaveNew.forstbehandlet
+        responseOppgave.eksternVarsling shouldBe oppgaveNew.eksternVarsling
+        responseOppgave.prefererteKanaler.joinToString(",") shouldBe oppgaveNew.preferertekanaler
+        responseOppgave.sistOppdatert shouldEqual oppgaveNew.sistOppdatert
+        responseOppgave.fristUtlopt shouldBe oppgaveNew.fristUtlopt
 
-        val eksternVarslingStatus = oppgave.eksternVarslingStatus
+        val eksternVarslingStatus = responseOppgave.eksternVarslingStatus
 
         eksternVarslingStatus.shouldNotBeNull()
         eksternVarslingStatus.sendt shouldBe eksternVarslingOppgave.eksternVarslingSendt
@@ -191,30 +191,30 @@ internal class VarselApiTest {
 
     @Test
     fun `svarer med riktig innboks-data`() = testVarselApi { client ->
-        val innboks = client.getVarsler(
-            type = Innboks,
+        val responseInnboks = client.getVarsler(
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(1),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
         ).body<List<Varsel>>().first()
 
-        innboks.type shouldBe Innboks
-        innboks.fodselsnummer shouldBe innboksNew.fodselsnummer
-        innboks.eventId shouldBe innboksNew.eventId
-        innboks.aktiv shouldBe innboksNew.aktiv
-        innboks.tekst shouldBe innboksNew.tekst
-        innboks.link shouldBe innboksNew.link
-        innboks.sikkerhetsnivaa shouldBe innboksNew.sikkerhetsnivaa
-        innboks.synligFremTil shouldEqual null
-        innboks.namespace shouldBe innboksNew.namespace
-        innboks.appnavn shouldBe innboksNew.appnavn
-        innboks.forstBehandlet shouldEqual innboksNew.forstbehandlet
-        innboks.eksternVarsling shouldBe innboksNew.eksternVarsling
-        innboks.prefererteKanaler.joinToString(",") shouldBe innboksNew.preferertekanaler
-        innboks.sistOppdatert shouldEqual innboksNew.sistOppdatert
-        innboks.fristUtlopt shouldBe innboksNew.fristUtlopt
+        responseInnboks.type shouldBe innboks
+        responseInnboks.fodselsnummer shouldBe innboksNew.fodselsnummer
+        responseInnboks.eventId shouldBe innboksNew.eventId
+        responseInnboks.aktiv shouldBe innboksNew.aktiv
+        responseInnboks.tekst shouldBe innboksNew.tekst
+        responseInnboks.link shouldBe innboksNew.link
+        responseInnboks.sikkerhetsnivaa shouldBe innboksNew.sikkerhetsnivaa
+        responseInnboks.synligFremTil shouldEqual null
+        responseInnboks.namespace shouldBe innboksNew.namespace
+        responseInnboks.appnavn shouldBe innboksNew.appnavn
+        responseInnboks.forstBehandlet shouldEqual innboksNew.forstbehandlet
+        responseInnboks.eksternVarsling shouldBe innboksNew.eksternVarsling
+        responseInnboks.prefererteKanaler.joinToString(",") shouldBe innboksNew.preferertekanaler
+        responseInnboks.sistOppdatert shouldEqual innboksNew.sistOppdatert
+        responseInnboks.fristUtlopt shouldBe innboksNew.fristUtlopt
 
-        val eksternVarslingStatus = innboks.eksternVarslingStatus
+        val eksternVarslingStatus = responseInnboks.eksternVarslingStatus
 
         eksternVarslingStatus.shouldNotBeNull()
         eksternVarslingStatus.sendt shouldBe eksternVarslingInnboks.eksternVarslingSendt
@@ -227,7 +227,7 @@ internal class VarselApiTest {
     @Test
     fun `svarer med arkiverte beskjeder`() = testVarselApi { client ->
         val arkiverteBeskjeder = client.getArkiverteVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(365),
             toDate = nowAtUtcZ().minusDays(40),
             max = 5
@@ -239,7 +239,7 @@ internal class VarselApiTest {
     @Test
     fun `svarer med arkiverte oppgaver`() = testVarselApi { client ->
         val arkiverteOppgaver = client.getArkiverteVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(365),
             toDate = nowAtUtcZ().minusDays(40),
             max = 5
@@ -251,7 +251,7 @@ internal class VarselApiTest {
     @Test
     fun `svarer med arkiverte innbokser`() = testVarselApi { client ->
         val arkiverteInnbokser = client.getArkiverteVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(365),
             toDate = nowAtUtcZ().minusDays(40),
             max = 5
@@ -263,7 +263,7 @@ internal class VarselApiTest {
     @Test
     fun `svarer med riktig arkivert beskjed-data`() = testVarselApi { client ->
         val arkivertBeskjed = client.getArkiverteVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(365),
             toDate = nowAtUtcZ().minusDays(60),
             max = 5
@@ -286,7 +286,7 @@ internal class VarselApiTest {
     @Test
     fun `svarer med riktig arkivert oppgave-data`() = testVarselApi { client ->
         val arkivertOppgave = client.getArkiverteVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(365),
             toDate = nowAtUtcZ().minusDays(60),
             max = 5
@@ -309,7 +309,7 @@ internal class VarselApiTest {
     @Test
     fun `svarer med riktig arkivert innboks-data`() = testVarselApi { client ->
         val arkivertInnboks = client.getArkiverteVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(365),
             toDate = nowAtUtcZ().minusDays(60),
             max = 5
@@ -332,28 +332,28 @@ internal class VarselApiTest {
     @Test
     fun `filtrerer beskjeder etter paramatere`() = testVarselApi { client ->
         val alleBeskjeder = client.getVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
         ).body<List<Varsel>>()
 
         val gamleBeskjeder = client.getVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().minusDays(1),
             max = 5
         ).body<List<Varsel>>()
 
         val fremtidigeBeskjeder = client.getVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().plusDays(1),
             toDate = nowAtUtcZ().plusDays(10),
             max = 5
         ).body<List<Varsel>>()
 
         val maxEnBeskjed = client.getVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().plusDays(1),
             max = 1
@@ -378,28 +378,28 @@ internal class VarselApiTest {
     @Test
     fun `filtrerer oppgaver etter paramatere`() = testVarselApi { client ->
         val alleOppgaver = client.getVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
         ).body<List<Varsel>>()
 
         val gamleOppgaver = client.getVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().minusDays(1),
             max = 5
         ).body<List<Varsel>>()
 
         val fremtidigeOppgaver = client.getVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().plusDays(1),
             toDate = nowAtUtcZ().plusDays(10),
             max = 5
         ).body<List<Varsel>>()
 
         val maxEnOppgave = client.getVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().plusDays(1),
             max = 1
@@ -424,28 +424,28 @@ internal class VarselApiTest {
     @Test
     fun `filtrerer innbokser etter paramatere`() = testVarselApi { client ->
         val alleInnbokser = client.getVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
         ).body<List<Varsel>>()
 
         val gamleInnbokser = client.getVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().minusDays(1),
             max = 5
         ).body<List<Varsel>>()
 
         val fremtidigeInnbokser = client.getVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().plusDays(1),
             toDate = nowAtUtcZ().plusDays(10),
             max = 5
         ).body<List<Varsel>>()
 
         val maxEnInnboks = client.getVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(20),
             toDate = nowAtUtcZ().plusDays(1),
             max = 1
@@ -470,28 +470,28 @@ internal class VarselApiTest {
     @Test
     fun `filtrerer arkiverte beskjeder etter paramatere`() = testVarselApi { client ->
         val alleArkiverteBeskjeder = client.getArkiverteVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ(),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val gamleArkiverteBeskjeder = client.getArkiverteVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ().minusDays(100),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val nyeArkiverteBeskjeder = client.getArkiverteVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(10),
             toDate = nowAtUtcZ(),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val maxEnArkivertBeskjed = client.getArkiverteVarsler(
-            type = Beskjed,
+            type = beskjed,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ(),
             max = 1
@@ -515,28 +515,28 @@ internal class VarselApiTest {
     @Test
     fun `filtrerer arkiverte oppgaver etter paramatere`() = testVarselApi { client ->
         val alleArkiverteOppgaver = client.getArkiverteVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ(),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val gamleArkiverteOppgaver = client.getArkiverteVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ().minusDays(100),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val nyeArkiverteOppgaver = client.getArkiverteVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(10),
             toDate = nowAtUtcZ(),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val maxEnArkivertOppgave = client.getArkiverteVarsler(
-            type = Oppgave,
+            type = oppgave,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ(),
             max = 1
@@ -560,28 +560,28 @@ internal class VarselApiTest {
     @Test
     fun `filtrerer arkiverte innbokser etter paramatere`() = testVarselApi { client ->
         val alleArkiverteInnbokser = client.getArkiverteVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ(),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val gamleArkiverteInnbokser = client.getArkiverteVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ().minusDays(100),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val nyeArkiverteInnbokser = client.getArkiverteVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(10),
             toDate = nowAtUtcZ(),
             max = 5
         ).body<List<ArkivertVarsel>>()
 
         val maxEnArkivertInnboks = client.getArkiverteVarsler(
-            type = Innboks,
+            type = innboks,
             fromDate = nowAtUtcZ().minusDays(500),
             toDate = nowAtUtcZ(),
             max = 1

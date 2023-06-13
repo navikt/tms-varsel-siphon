@@ -147,7 +147,7 @@ fun dbEksternVarslingStatus(
 private val eksternVarslingHistorikk = listOf(
     EksternVarslingHistorikkEntry(
         melding = "Oversendt",
-        status = EksternStatus.Bestilt,
+        status = EksternStatus.bestilt,
         distribusjonsId = null,
         kanal = null,
         renotifikasjon = null,
@@ -155,7 +155,7 @@ private val eksternVarslingHistorikk = listOf(
     ),
     EksternVarslingHistorikkEntry(
         melding = "Ferdigstilt",
-        status = EksternStatus.Sendt,
+        status = EksternStatus.sendt,
         distribusjonsId = 123L,
         kanal = "SMS",
         renotifikasjon = false,
@@ -163,7 +163,7 @@ private val eksternVarslingHistorikk = listOf(
     ),
     EksternVarslingHistorikkEntry(
         melding = "Ferdigstilt",
-        status = EksternStatus.Sendt,
+        status = EksternStatus.sendt,
         distribusjonsId = 123L,
         kanal = "EPOST",
         renotifikasjon = false,

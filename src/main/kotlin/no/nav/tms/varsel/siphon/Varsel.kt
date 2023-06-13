@@ -31,17 +31,12 @@ data class Varsel(
 
 @Serializable
 enum class VarselType {
-    Beskjed, Oppgave, Innboks;
-
-    val lowercaseName = name.lowercase()
-
-    @JsonValue
-    fun toJson() = lowercaseName
+    beskjed, oppgave, innboks;
 
     companion object {
         fun parse(string: String): VarselType {
             return values()
-                .filter { it.lowercaseName == string.lowercase() }
+                .filter { it.name == string.lowercase() }
                 .firstOrNull() ?: throw RuntimeException("Could not parse varselType $string")
         }
     }
@@ -85,12 +80,7 @@ data class EksternVarslingHistorikkEntry(
 
 @Serializable
 enum class EksternStatus {
-    Feilet, Info, Bestilt, Sendt, Ferdigstilt;
-
-    val lowercaseName = name.lowercase()
-
-    @JsonValue
-    fun toJson() = lowercaseName
+    feilet, info, bestilt, sendt, ferdigstilt;
 }
 
 @Serializable

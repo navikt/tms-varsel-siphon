@@ -107,7 +107,7 @@ fun LocalPostgresDatabase.insertInnboks(innboks: DatabaseInnboks) {
 fun LocalPostgresDatabase.insertEksternVarslingStatus(evStatus: DatabaseEksternVarslingStatus) {
     update {
         queryOf("""
-            insert into ekstern_varsling_status_${evStatus.varselType.lowercaseName} (
+            insert into ekstern_varsling_status_${evStatus.varselType.name} (
                 eventid, sistmottattstatus, sistoppdatert, kanaler, eksternvarslingsendt, renotifikasjonsendt, historikk
             ) values (
                 :eventid, :sistmottattstatus, :sistoppdatert, :kanaler, :eksternvarslingsendt, :renotifikasjonsendt, :historikk
@@ -129,7 +129,7 @@ fun LocalPostgresDatabase.insertEksternVarslingStatus(evStatus: DatabaseEksternV
 fun LocalPostgresDatabase.insertEksternVarslingStatusWithLocalDateTime(evStatus: DatabaseEksternVarslingStatus) {
     update {
         queryOf("""
-            insert into ekstern_varsling_status_${evStatus.varselType.lowercaseName} (
+            insert into ekstern_varsling_status_${evStatus.varselType.name} (
                 eventid, sistmottattstatus, sistoppdatert, kanaler, eksternvarslingsendt, renotifikasjonsendt, historikk
             ) values (
                 :eventid, :sistmottattstatus, :sistoppdatert, :kanaler, :eksternvarslingsendt, :renotifikasjonsendt, :historikk
@@ -171,7 +171,7 @@ private fun List<EksternVarslingHistorikkEntry>.withLocalDateTime() = map { entr
 fun LocalPostgresDatabase.insertArkivVarsel(arkivVarsel: DatabaseArkivVarsel) {
     update {
         queryOf("""
-           insert into ${arkivVarsel.varselType.lowercaseName}_arkiv (
+           insert into ${arkivVarsel.varselType.name}_arkiv (
                eventid, fodselsnummer, tekst, link, sikkerhetsnivaa, aktiv, produsentapp, eksternvarslingsendt, eksternvarslingkanaler, forstbehandlet, arkivert, frist_utløpt
            ) values (
                :eventid, :fodselsnummer, :tekst, :link, :sikkerhetsnivaa, :aktiv, :produsentapp, :eksternvarslingsendt, :eksternvarslingkanaler, :forstbehandlet, :arkivert, :fristutlopt

@@ -4,10 +4,8 @@ import kotliquery.Row
 import kotliquery.queryOf
 import no.nav.tms.varsel.siphon.database.Database
 import no.nav.tms.varsel.siphon.database.defaultObjectMapper
-import no.nav.tms.varsel.siphon.database.json
 import no.nav.tms.varsel.siphon.database.jsonOrNull
 import java.time.ZonedDateTime
-import javax.swing.text.html.ListView
 
 class VarselRepository(private val database: Database) {
 
@@ -105,22 +103,22 @@ class VarselRepository(private val database: Database) {
           v.sikkerhetsnivaa,
           v.sistoppdatert,
           v.aktiv,
-          ${if(varselType == VarselType.Innboks) "null as synligfremtil" else "v.synligfremtil"},
+          ${if(varselType == VarselType.innboks) "null as synligfremtil" else "v.synligfremtil"},
           v.eksternvarsling,
           v.preferertekanaler,
           v.namespace,
           v.appnavn,
           v.forstbehandlet,
           v.frist_utløpt,
-          ${if(varselType == VarselType.Innboks) "false as frist_utløpt" else "v.frist_utløpt"},
+          ${if(varselType == VarselType.innboks) "false as frist_utløpt" else "v.frist_utløpt"},
           dsv.eventId as ev_eventId,
           dsv.sistoppdatert as ev_sistoppdatert,
           dsv.kanaler as ev_kanaler,
           dsv.eksternvarslingsendt as ev_eksternvarslingsendt,
           dsv.renotifikasjonsendt as ev_renotifikasjonsendt,
           dsv.historikk as ev_historikk
-        from ${varselType.lowercaseName} as v
-          left join ekstern_varsling_status_${varselType.lowercaseName} as dsv on v.eventId = dsv.eventId
+        from ${varselType.name} as v
+          left join ekstern_varsling_status_${varselType.name} as dsv on v.eventId = dsv.eventId
           where forstbehandlet between :start and :end order by forstbehandlet limit :max
     """
 
@@ -138,7 +136,7 @@ class VarselRepository(private val database: Database) {
           forstbehandlet,
           arkivert,
           frist_utløpt
-        from ${varselType.lowercaseName}_arkiv 
+        from ${varselType.name}_arkiv 
           where arkivert between :start and :end order by arkivert limit :max
     """
 

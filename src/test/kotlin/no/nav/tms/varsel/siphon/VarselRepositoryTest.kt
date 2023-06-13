@@ -9,7 +9,6 @@ import no.nav.tms.varsel.siphon.database.insertEksternVarslingStatusWithLocalDat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.time.ZonedDateTime
 
 internal class VarselRepositoryTest {
 
@@ -24,7 +23,7 @@ internal class VarselRepositoryTest {
     val historikk = listOf(
         EksternVarslingHistorikkEntry(
             melding = "Oversendt",
-            status = EksternStatus.Bestilt,
+            status = EksternStatus.bestilt,
             distribusjonsId = null,
             kanal = null,
             renotifikasjon = null,
@@ -33,10 +32,10 @@ internal class VarselRepositoryTest {
     )
 
     val beskjed1 = dbBeskjed(forstbehandlet = LocalDateTimeHelper.nowAtUtc())
-    val eksternVarslingBeskjed1 = dbEksternVarslingStatus(VarselType.Beskjed, beskjed1.eventId, historikk = historikk)
+    val eksternVarslingBeskjed1 = dbEksternVarslingStatus(VarselType.beskjed, beskjed1.eventId, historikk = historikk)
 
     val beskjed2 = dbBeskjed(forstbehandlet = LocalDateTimeHelper.nowAtUtc())
-    val eksternVarslingBeskjed2 = dbEksternVarslingStatus(VarselType.Beskjed, beskjed2.eventId, historikk = historikk)
+    val eksternVarslingBeskjed2 = dbEksternVarslingStatus(VarselType.beskjed, beskjed2.eventId, historikk = historikk)
 
     @BeforeAll
     fun setup() {
@@ -49,7 +48,7 @@ internal class VarselRepositoryTest {
     @Test
     fun `godtar at tidspunkt for ekstern varsling historikk er lagret som LocalDateTime`() {
         val varsler = repository.fetchVarselList(
-            VarselType.Beskjed,
+            VarselType.beskjed,
             fromDate = nowAtUtcZ().minusDays(1),
             toDate = nowAtUtcZ().plusDays(1),
             max = 5
