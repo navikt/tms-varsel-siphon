@@ -6,10 +6,10 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 object LocalDateTimeHelper {
-    fun nowAtUtc() = LocalDateTime.now((ZoneId.of("UTC"))).truncatedTo(ChronoUnit.MILLIS)
+    fun nowAtUtc() = LocalDateTime.now((ZoneId.of("Z"))).truncatedTo(ChronoUnit.MILLIS)
 
 }
 
 object ZonedDateTimeHelper {
-    fun nowAtUtcZ() = ZonedDateTime.now(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MILLIS)
+    fun nowAtUtcZ() = ZonedDateTime.now(ZoneId.of("Z")).truncatedTo(ChronoUnit.MILLIS)
 }

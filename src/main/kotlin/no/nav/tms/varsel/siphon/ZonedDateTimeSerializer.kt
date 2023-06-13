@@ -34,10 +34,14 @@ class ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
 class DefaultUtcZonedDateTimeDeserializer : JsonDeserializer<ZonedDateTime>() {
 
     override fun deserialize(parser: JsonParser, context: DeserializationContext?): ZonedDateTime {
-        return try {
-            return ZonedDateTime.parse(parser.text)
-        } catch (e: DateTimeParseException) {
-            LocalDateTime.parse(parser.text).atZone(ZoneId.of("UTC"))
-        }
+        return parser.text.parseAsZonedDateTime()
+    }
+}
+
+fun String.parseAsZonedDateTime(defaultZoneId: ZoneId = ZoneId.of("Z")): ZonedDateTime {
+    return try {
+        return ZonedDateTime.parse(this)
+    } catch (e: DateTimeParseException) {
+        LocalDateTime.parse(this).atZone(defaultZoneId)
     }
 }

@@ -2,6 +2,8 @@ package no.nav.tms.varsel.siphon.database
 
 import kotliquery.queryOf
 import no.nav.tms.varsel.siphon.*
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 fun LocalPostgresDatabase.insertBeskjed(beskjed: DatabaseBeskjed) {
     update {
@@ -102,26 +104,68 @@ fun LocalPostgresDatabase.insertInnboks(innboks: DatabaseInnboks) {
     }
 }
 
-fun LocalPostgresDatabase.insertEksternVarslingStatus(doknotStatus: DatabaseEksternVarslingStatus) {
+fun LocalPostgresDatabase.insertEksternVarslingStatus(evStatus: DatabaseEksternVarslingStatus) {
     update {
         queryOf("""
-            insert into ekstern_varsling_status_${doknotStatus.varselType.lowercaseName} (
+            insert into ekstern_varsling_status_${evStatus.varselType.lowercaseName} (
                 eventid, sistmottattstatus, sistoppdatert, kanaler, eksternvarslingsendt, renotifikasjonsendt, historikk
             ) values (
                 :eventid, :sistmottattstatus, :sistoppdatert, :kanaler, :eksternvarslingsendt, :renotifikasjonsendt, :historikk
             )
         """,
             mapOf(
-                "eventid" to doknotStatus.eventId,
-                "sistmottattstatus" to doknotStatus.sistMottattStatus,
-                "sistoppdatert" to doknotStatus.sistOppdatert,
-                "kanaler" to doknotStatus.kanaler,
-                "eksternvarslingsendt" to doknotStatus.eksternVarslingSendt,
-                "renotifikasjonsendt" to doknotStatus.renotifikasjonSendt,
-                "historikk" to doknotStatus.historikk.toJsonb()
+                "eventid" to evStatus.eventId,
+                "sistmottattstatus" to evStatus.sistMottattStatus,
+                "sistoppdatert" to evStatus.sistOppdatert,
+                "kanaler" to evStatus.kanaler,
+                "eksternvarslingsendt" to evStatus.eksternVarslingSendt,
+                "renotifikasjonsendt" to evStatus.renotifikasjonSendt,
+                "historikk" to evStatus.historikk.toJsonb()
             )
         )
     }
+}
+
+fun LocalPostgresDatabase.insertEksternVarslingStatusWithLocalDateTime(evStatus: DatabaseEksternVarslingStatus) {
+    update {
+        queryOf("""
+            insert into ekstern_varsling_status_${evStatus.varselType.lowercaseName} (
+                eventid, sistmottattstatus, sistoppdatert, kanaler, eksternvarslingsendt, renotifikasjonsendt, historikk
+            ) values (
+                :eventid, :sistmottattstatus, :sistoppdatert, :kanaler, :eksternvarslingsendt, :renotifikasjonsendt, :historikk
+            )
+        """,
+            mapOf(
+                "eventid" to evStatus.eventId,
+                "sistmottattstatus" to evStatus.sistMottattStatus,
+                "sistoppdatert" to evStatus.sistOppdatert,
+                "kanaler" to evStatus.kanaler,
+                "eksternvarslingsendt" to evStatus.eksternVarslingSendt,
+                "renotifikasjonsendt" to evStatus.renotifikasjonSendt,
+                "historikk" to evStatus.historikk.withLocalDateTime().toJsonb()
+            )
+        )
+    }
+}
+
+private data class HistorikkEntryWithLocalDateTime(
+    val melding: String,
+    val status: EksternStatus,
+    val distribusjonsId: Long?,
+    val kanal: String?,
+    val renotifikasjon: Boolean?,
+    val tidspunkt: LocalDateTime
+)
+
+private fun List<EksternVarslingHistorikkEntry>.withLocalDateTime() = map { entry ->
+    HistorikkEntryWithLocalDateTime(
+        melding = entry.melding,
+        status = entry.status,
+        distribusjonsId = entry.distribusjonsId,
+        kanal = entry.kanal,
+        renotifikasjon = entry.renotifikasjon,
+        tidspunkt = entry.tidspunkt.toLocalDateTime()
+    )
 }
 
 fun LocalPostgresDatabase.insertArkivVarsel(arkivVarsel: DatabaseArkivVarsel) {

@@ -1,9 +1,12 @@
 @file:UseSerializers(ZonedDateTimeSerializer::class)
 package no.nav.tms.varsel.siphon
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 @Serializable
@@ -61,7 +64,24 @@ data class EksternVarslingHistorikkEntry(
     val kanal: String?,
     val renotifikasjon: Boolean?,
     val tidspunkt: ZonedDateTime
-)
+) {
+    @JsonCreator
+    constructor(
+        melding: String,
+        status: EksternStatus,
+        distribusjonsId: Long?,
+        kanal: String?,
+        renotifikasjon: Boolean?,
+        tidspunkt: String
+    ): this(
+        melding,
+        status,
+        distribusjonsId,
+        kanal,
+        renotifikasjon,
+        tidspunkt.parseAsZonedDateTime()
+    )
+}
 
 @Serializable
 enum class EksternStatus {
