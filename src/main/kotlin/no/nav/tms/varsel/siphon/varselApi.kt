@@ -37,7 +37,7 @@ fun Route.varselApi(readRepository: VarselRepository) {
 
 @Serializable
 @Resource("/varsler")
-class Varsler(
+data class Varsler(
     val type: VarselType,
     val fraDato: ZonedDateTime,
     val tilDato: ZonedDateTime,
@@ -46,7 +46,7 @@ class Varsler(
 
 @Serializable
 @Resource("/arkiv/varsler")
-class ArkivVarsler(
+data class ArkivVarsler(
     val type: VarselType,
     val fraDato: ZonedDateTime,
     val tilDato: ZonedDateTime,
