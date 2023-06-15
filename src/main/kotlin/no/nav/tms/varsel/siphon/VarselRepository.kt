@@ -160,7 +160,7 @@ class VarselRepository(private val database: Database) {
           dsv.historikk as ev_historikk
         from ${varselType.name} as v
           left join ekstern_varsling_status_${varselType.name} as dsv on v.eventId = dsv.eventId
-          where eventId = :varselId
+          where v.eventId = :varselId
     """
 
     private fun fetchArchivedVarselQuery(varselType: VarselType) = """
