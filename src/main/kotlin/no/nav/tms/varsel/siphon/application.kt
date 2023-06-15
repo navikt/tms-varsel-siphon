@@ -76,6 +76,9 @@ fun Application.configureApi(
         authenticate {
             varselApi(varselRepository)
         }
+        route("/debug") {
+            varselApi(varselRepository)
+        }
     }
 }
 
