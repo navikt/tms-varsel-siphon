@@ -31,8 +31,8 @@ class VarselRepository(private val database: Database) {
             queryOf(
                 fetchVarselQuery(type),
                 mapOf(
-                    "start" to fromDate,
-                    "end" to toDate,
+                    "start" to fromDate.atUtc(),
+                    "end" to toDate.atUtc(),
                     "max" to max
                 )
             )
@@ -46,8 +46,8 @@ class VarselRepository(private val database: Database) {
             queryOf(
                 fetchArchivedVarselQuery(type),
                 mapOf(
-                    "start" to fromDate,
-                    "end" to toDate,
+                    "start" to fromDate.atUtc(),
+                    "end" to toDate.atUtc(),
                     "max" to max
                 )
             )
@@ -182,6 +182,8 @@ class VarselRepository(private val database: Database) {
         from ${varselType.name}_arkiv 
           where arkivert between :start and :end order by arkivert limit :max
     """
+
+    private fun ZonedDateTime.atUtc() = withZoneSameInstant(ZoneId.of("Z"))
 
     private fun Row.utcZonedDateTime(label: String): ZonedDateTime {
         return utcZonedDateTimeOrNull(label)!!
