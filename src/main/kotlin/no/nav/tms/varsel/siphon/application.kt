@@ -6,6 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.resources.*
@@ -62,6 +63,10 @@ fun Application.configureApi(
                     log.warn("Feil i parametere.", cause)
                 }
 
+                is NotFoundException -> {
+
+                }
+
                 else -> {
                     call.respond(HttpStatusCode.InternalServerError)
                     log.warn("Feil ved behandling av forespørsel.", cause)
@@ -76,9 +81,7 @@ fun Application.configureApi(
         authenticate {
             varselApi(varselRepository)
         }
-        route("/debug") {
-            varselApi(varselRepository)
-        }
+        debugApi(varselRepository)
     }
 }
 
