@@ -5,7 +5,9 @@ import kotliquery.queryOf
 import no.nav.tms.varsel.siphon.database.Database
 import no.nav.tms.varsel.siphon.database.defaultObjectMapper
 import no.nav.tms.varsel.siphon.database.jsonOrNull
+import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.*
 
 class VarselRepository(private val database: Database) {
 
@@ -16,8 +18,8 @@ class VarselRepository(private val database: Database) {
             queryOf(
                 fetchVarselQuery(type),
                 mapOf(
-                    "start" to fromDate,
-                    "end" to toDate,
+                    "start" to fromDate.atUtc(),
+                    "end" to toDate.atUtc(),
                     "max" to max
                 )
             )
@@ -26,13 +28,13 @@ class VarselRepository(private val database: Database) {
         }
     }
 
-    fun fetchArvivertVarselList(type: VarselType, fromDate: ZonedDateTime, toDate: ZonedDateTime, max: Int): List<ArkivertVarsel> {
+    fun fetchArkivertVarselList(type: VarselType, fromDate: ZonedDateTime, toDate: ZonedDateTime, max: Int): List<ArkivertVarsel> {
         return database.list {
             queryOf(
                 fetchArchivedVarselQuery(type),
                 mapOf(
-                    "start" to fromDate,
-                    "end" to toDate,
+                    "start" to fromDate.atUtc(),
+                    "end" to toDate.atUtc(),
                     "max" to max
                 )
             )
@@ -50,9 +52,9 @@ class VarselRepository(private val database: Database) {
             tekst = it.string("tekst"),
             link = it.string("link"),
             sikkerhetsnivaa = it.int("sikkerhetsnivaa"),
-            forstBehandlet = it.zonedDateTime("forstBehandlet"),
-            synligFremTil = it.zonedDateTimeOrNull("synligFremTil"),
-            sistOppdatert = it.zonedDateTime("sistOppdatert"),
+            forstBehandlet = it.utcZonedDateTime("forstBehandlet"),
+            synligFremTil = it.utcZonedDateTimeOrNull("synligFremTil"),
+            sistOppdatert = it.utcZonedDateTime("sistOppdatert"),
             fristUtlopt = it.boolean("frist_utløpt"),
             prefererteKanaler = it.list("prefererteKanaler"),
             appnavn = it.string("appnavn"),
@@ -88,8 +90,8 @@ class VarselRepository(private val database: Database) {
             produsentApp = it.string("produsentApp"),
             eksternVarslingSendt = it.boolean("eksternVarslingSendt"),
             eksternVarslingKanaler = it.list("eksternVarslingKanaler"),
-            forstBehandlet = it.zonedDateTime("forstBehandlet"),
-            arkivert = it.zonedDateTime("arkivert"),
+            forstBehandlet = it.utcZonedDateTime("forstBehandlet"),
+            arkivert = it.utcZonedDateTime("arkivert"),
             fristUtlopt = it.boolean("frist_utløpt")
         )
     }
@@ -139,6 +141,17 @@ class VarselRepository(private val database: Database) {
         from ${varselType.name}_arkiv 
           where arkivert between :start and :end order by arkivert limit :max
     """
+
+    private fun ZonedDateTime.atUtc() = withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()
+
+    private fun Row.utcZonedDateTime(label: String): ZonedDateTime {
+        return utcZonedDateTimeOrNull(label)!!
+    }
+
+    private fun Row.utcZonedDateTimeOrNull(label: String): ZonedDateTime? {
+        return sqlTimestampOrNull(label, Calendar.getInstance(TimeZone.getTimeZone("Z")))
+            ?.let { ZonedDateTime.ofInstant(it.toInstant(), ZoneId.of("Z")) }
+    }
 
     private fun Row.list(label: String, separator: String = ","): List<String> {
         val asString = stringOrNull(label)

@@ -9,6 +9,14 @@ import kotliquery.action.NullableResultQueryAction
 
 interface Database {
 
+    fun isConnected(): Boolean {
+        return singleOrNull {
+            queryOf("select 1 from beskjed limit 1")
+                .map { it.int(1) }
+                .asSingle
+        } == 1
+    }
+
     val dataSource: HikariDataSource
 
     fun update(queryBuilder: (Session) -> Query) {

@@ -26,7 +26,7 @@ fun Route.varselApi(readRepository: VarselRepository) {
 
     get<ArkivVarsler> { params ->
         log.info("Fetching arkiv-varsler for params $params")
-        call.respond(readRepository.fetchArvivertVarselList(
+        call.respond(readRepository.fetchArkivertVarselList(
             type = params.type,
             fromDate = params.fraDato,
             toDate = params.tilDato,

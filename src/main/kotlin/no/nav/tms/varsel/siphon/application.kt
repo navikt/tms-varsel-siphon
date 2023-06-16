@@ -6,6 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.resources.*
@@ -14,19 +15,18 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import no.nav.tms.token.support.azure.validation.installAzureAuth
+import no.nav.tms.varsel.siphon.database.Database
 import no.nav.tms.varsel.siphon.database.PostgresDatabase
 
 fun main() {
     val environment = Environment()
     val database = PostgresDatabase(environment)
 
-    val varselRepository = VarselRepository(database)
-
     embeddedServer(
         factory = Netty,
         environment = applicationEngineEnvironment {
             module {
-                configureApi(varselRepository)
+                configureApi(database)
             }
             connector {
                 port = 8080
@@ -36,9 +36,11 @@ fun main() {
 }
 
 fun Application.configureApi(
-    varselRepository: VarselRepository,
+    database: Database,
     installAuthenticatorsFunction: Application.() -> Unit = installAuth(),
 ) {
+
+    val varselRepository = VarselRepository(database)
 
     val log = KotlinLogging.logger {}
 
@@ -72,7 +74,7 @@ fun Application.configureApi(
     }
 
     routing {
-        metaRoutes()
+        metaRoutes(database)
         authenticate {
             varselApi(varselRepository)
         }

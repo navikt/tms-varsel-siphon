@@ -2,6 +2,8 @@ package no.nav.tms.varsel.siphon.database
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import kotliquery.Row
+import kotliquery.queryOf
 import no.nav.tms.varsel.siphon.Environment
 
 class PostgresDatabase(env: Environment) : Database {
