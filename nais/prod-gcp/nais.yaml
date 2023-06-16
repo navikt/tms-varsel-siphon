@@ -6,13 +6,15 @@ metadata:
   labels:
     team: min-side
 spec:
+  envFrom:
+    - secret: tms-varsel-siphon-secrets
   image: {{version}}
   port: 8080
   liveness:
-    path: /isalive
+    path: /internal/isAlive
     initialDelay: 30
   readiness:
-    path: /isready
+    path: /internal/isReady
     initialDelay: 30
   replicas:
     min: 2
@@ -25,22 +27,13 @@ spec:
     requests:
       cpu: "50m"
       memory: 128Mi
-  gcp:
-    permissions:
-      - resource:
-          apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
-          kind: Project
-        role: roles/cloudsql.client
-    sqlInstances:
-      - databases:
-          - envVarPrefix: DB
-            name: brukernotifikasjon-cache
-            users:
-              - name: varsel-siphon
-        name: brukernotifikasjon-cache
   azure:
     application:
       enabled: true
+  accessPolicy:
     inbound:
       rules:
         - application: tms-varsel-authority
+    outbound:
+      rules:
+        - application: tms-varsel-siphon-sql-proxy
