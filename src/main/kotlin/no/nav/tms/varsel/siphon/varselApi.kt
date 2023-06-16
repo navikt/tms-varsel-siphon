@@ -26,7 +26,7 @@ fun Route.varselApi(readRepository: VarselRepository) {
 
     get<ArkivVarsler> { params ->
         log.info("Fetching arkiv-varsler for params $params")
-        call.respond(readRepository.fetchArvivertVarselList(
+        call.respond(readRepository.fetchArkivertVarselList(
             type = params.type,
             fromDate = params.fraDato,
             toDate = params.tilDato,
@@ -34,24 +34,6 @@ fun Route.varselApi(readRepository: VarselRepository) {
         ))
     }
 }
-
-fun Route.debugApi(readRepository: VarselRepository) {
-    get<DebugVarsel> { params ->
-        log.info("Fetching varsel for params $params")
-        call.respond(readRepository.fetchVarsel(
-            type = params.type,
-            varselId = params.varselId
-        )?: "{}")
-    }
-}
-
-
-@Serializable
-@Resource("/debug/varsel")
-data class DebugVarsel(
-    val type: VarselType,
-    val varselId: String
-)
 
 @Serializable
 @Resource("/varsler")

@@ -63,10 +63,6 @@ fun Application.configureApi(
                     log.warn("Feil i parametere.", cause)
                 }
 
-                is NotFoundException -> {
-
-                }
-
                 else -> {
                     call.respond(HttpStatusCode.InternalServerError)
                     log.warn("Feil ved behandling av forespørsel.", cause)
@@ -81,7 +77,6 @@ fun Application.configureApi(
         authenticate {
             varselApi(varselRepository)
         }
-        debugApi(varselRepository)
     }
 }
 
