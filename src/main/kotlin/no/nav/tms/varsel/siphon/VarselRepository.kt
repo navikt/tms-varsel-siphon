@@ -183,7 +183,7 @@ class VarselRepository(private val database: Database) {
           where arkivert between :start and :end order by arkivert limit :max
     """
 
-    private fun ZonedDateTime.atUtc() = withZoneSameInstant(ZoneId.of("Z"))
+    private fun ZonedDateTime.atUtc() = withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()
 
     private fun Row.utcZonedDateTime(label: String): ZonedDateTime {
         return utcZonedDateTimeOrNull(label)!!
